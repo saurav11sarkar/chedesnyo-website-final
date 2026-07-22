@@ -48,8 +48,8 @@ export function ReportModal({ targetId, targetType, targetName }: ReportModalPro
       const json = await res.json();
       if (!res.ok) throw new Error(json.message || "Rapportage mislukt");
       setSubmitted(true);
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Rapportage mislukt");
     } finally {
       setLoading(false);
     }
