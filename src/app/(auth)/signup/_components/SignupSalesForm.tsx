@@ -41,6 +41,10 @@ type FormData = {
   role?: string
 }
 
+type SalesRegistrationPayload = Omit<FormData, "referralCode"> & {
+  ref?: string
+}
+
 export default function SignupSalesForm() {
   const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
@@ -72,7 +76,7 @@ export default function SignupSalesForm() {
 
   // ✅ Sales Registration Mutation
   const salesRegistrationMutation = useMutation({
-    mutationFn: async (data: FormData) => {
+    mutationFn: async (data: SalesRegistrationPayload) => {
       const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API_URL}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -101,7 +105,7 @@ export default function SignupSalesForm() {
       ...rest,
       ref: referralCode || undefined,
       role: "seles",
-    } as any)
+    })
   }
 
   return (

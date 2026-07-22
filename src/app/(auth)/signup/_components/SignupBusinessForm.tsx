@@ -47,6 +47,10 @@ interface IndustryResponse {
   data: Industry[]
 }
 
+type BusinessRegistrationPayload = Omit<FormData, "referralCode"> & {
+  ref?: string
+}
+
 export default function SignupBusinessForm() {
   const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
@@ -80,7 +84,7 @@ export default function SignupBusinessForm() {
 
   // ✅ Business registration mutation
   const businessRegistrationMutation = useMutation({
-    mutationFn: async (data: FormData) => {
+    mutationFn: async (data: BusinessRegistrationPayload) => {
       const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API_URL}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -110,7 +114,7 @@ export default function SignupBusinessForm() {
       ...rest,
       ref: referralCode || undefined,
       role: "business",
-    } as any)
+    })
   }
 
   return (

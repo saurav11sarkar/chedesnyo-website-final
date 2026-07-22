@@ -4,7 +4,6 @@ import { BreadcrumbHeader } from "@/components/ReusableCard/SubHero";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Heart, HeartOff, User, Briefcase, BookOpen, ChevronLeft, ChevronRight } from "lucide-react";
 import { useSession } from "next-auth/react";
-import Image from "next/image";
 import Link from "next/link";
 import React, { useState } from "react";
 

@@ -43,7 +43,7 @@ function PostAnAssignmentAdd() {
   const TOKEN = session.data?.user?.accessToken || "";
 
   // ✅ Fetch user profile
-  const { data: useData, isLoading: userLoading } = useQuery({
+  const { isLoading: userLoading } = useQuery({
     queryKey: ["userProfile"],
     queryFn: async () => {
       const res = await fetch(
