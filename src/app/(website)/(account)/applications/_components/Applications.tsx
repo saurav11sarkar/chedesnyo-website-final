@@ -24,7 +24,7 @@ function Applications() {
           { label: "Startpagina", href: "/" },
           {
             label: "Aanmeldingen",
-            href: "/application",
+            href: "/applications",
           },
         ]}
       />

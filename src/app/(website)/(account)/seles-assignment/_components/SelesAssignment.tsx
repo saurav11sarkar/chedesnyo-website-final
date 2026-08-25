@@ -81,7 +81,7 @@ function SelesAssignment() {
         title="Mijn opdrachten"
         breadcrumbs={[
           { label: "Startpagina", href: "/" },
-          { label: "Mijn opdrachten", href: "/my-assignments" },
+          { label: "Mijn opdrachten", href: "/seles-assignment" },
         ]}
       />
 

@@ -70,7 +70,7 @@ function EnrollmentHistory() {
         title="Inschrijvingsgeschiedenis"
         breadcrumbs={[
           { label: "Startpagina", href: "/" },
-          { label: "Inschrijvingsgeschiedenis", href: "/application" },
+          { label: "Inschrijvingsgeschiedenis", href: "/enrollment-history" },
         ]}
       />
 

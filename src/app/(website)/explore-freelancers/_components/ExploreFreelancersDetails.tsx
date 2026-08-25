@@ -68,7 +68,7 @@ function ExploreFreelancersDetails() {
   const handleChatClick = () => {
     if (!token) {
       alert("Please login to start chat");
-      return router.push("/login");
+      return router.push("/signin");
     }
     createConversation.mutate();
   };
