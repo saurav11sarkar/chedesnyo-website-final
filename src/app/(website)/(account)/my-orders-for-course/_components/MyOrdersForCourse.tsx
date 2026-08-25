@@ -98,7 +98,7 @@ function MyOrders() {
         title="Mijn cursusbestellingen"
         breadcrumbs={[
           { label: "Startpagina", href: "/" },
-          { label: "Mijn cursusbestellingen", href: "/my-orders" },
+          { label: "Mijn cursusbestellingen", href: "/my-orders-for-course" },
         ]}
       />
 

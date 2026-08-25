@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -32,9 +32,9 @@ const formSchema = z
   .object({
     newPassword: z
       .string()
-      .min(6, "Wachtwoord moet minimaal 6 tekens bevatten.")
+      .min(8, "Wachtwoord moet minimaal 8 tekens bevatten.")
       .regex(/[0-9]/, "Wachtwoord moet ten minste één nummer bevatten."),
-    confirmPassword: z.string().min(6, "Bevestig uw wachtwoord."),
+    confirmPassword: z.string().min(8, "Bevestig uw wachtwoord."),
     rememberMe: z.boolean().optional(),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
@@ -49,7 +49,11 @@ export default function ResetPassword() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get("email") || "";
-  const resetToken = localStorage.getItem("refreshToken") || "";
+  const [resetToken, setResetToken] = useState("");
+
+  useEffect(() => {
+    setResetToken(sessionStorage.getItem("passwordResetToken") || "");
+  }, []);
 
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -84,6 +88,7 @@ export default function ResetPassword() {
       return res.json();
     },
     onSuccess: (data) => {
+      sessionStorage.removeItem("passwordResetToken");
       toast.success(data.message || "Wachtwoord succesvol opnieuw ingesteld");
       router.push("/signin");
     },

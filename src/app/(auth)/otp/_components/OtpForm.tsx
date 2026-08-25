@@ -60,7 +60,7 @@ export default function VerifyOTPForm() {
     },
     onSuccess: (data) => {
       toast.success(data.message || "OTP succesvol geverifieerd");
-      localStorage.setItem("refreshToken", data?.resetToken);
+      sessionStorage.setItem("passwordResetToken", data?.data?.resetToken || "");
       router.push(`/reset-password?email=${encodeURIComponent(email)}`);
     },
     onError: (err) => {
