@@ -3,7 +3,7 @@
 
 import React, { useState } from "react";
 import { MessageCircle, Phone, MapPin, Loader2 } from "lucide-react";
-import Image from "next/image";
+import AvatarImage from "@/components/share/AvatarImage";
 import { BreadcrumbHeader } from "@/components/ReusableCard/SubHero";
 import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -170,7 +170,7 @@ function FindBusinessDetails() {
           <div className="flex flex-col lg:flex-row gap-8 lg:gap-16">
             {/* Left Section - Image */}
             <div className="w-full lg:w-1/3 h-[200px] sm:h-[200px] md:h-[300px] lg:h-[400px] rounded-lg overflow-hidden shadow-sm">
-              <Image
+              <AvatarImage
                 width={400}
                 height={400}
                 src={user.profileImage || "/images/businessImage.jpg"}

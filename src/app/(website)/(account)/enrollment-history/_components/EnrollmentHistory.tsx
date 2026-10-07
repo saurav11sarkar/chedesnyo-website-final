@@ -41,7 +41,8 @@ function EnrollmentHistory() {
     const TOKEN = session.data?.user?.accessToken || "";
   // ✅ Fetch real data
   const { data: enrollData, isLoading, isError } = useQuery<ApiResponse>({
-    queryKey: ["enrollments"],
+    queryKey: ["enrollments", session.data?.user?.id],
+    enabled: !!TOKEN,
     queryFn: async () => {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/payment/my`,

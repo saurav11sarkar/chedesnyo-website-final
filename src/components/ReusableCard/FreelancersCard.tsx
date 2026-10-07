@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import Image from "next/image";
+import AvatarImage from "@/components/share/AvatarImage";
 import { Star } from "lucide-react";
 import Link from "next/link";
 
@@ -30,7 +30,7 @@ export const FreelancerCard: React.FC<FreelancerCardProps> = ({
     <div className="bg-white rounded-2xl shadow-[0px_4px_16px_0px_#00000010] overflow-hidden flex flex-col sm:flex-row h-full transition-transform hover:scale-[1.02] duration-300">
       {/* Image Section with styled background */}
       <div className="w-full sm:w-64 h-56 sm:h-auto flex-shrink-0 bg-green-50 flex items-center justify-center overflow-hidden relative rounded-t-2xl sm:rounded-l-2xl">
-        <Image
+        <AvatarImage
           width={400}
           height={400}
           src={image}

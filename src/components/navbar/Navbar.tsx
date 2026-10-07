@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import AvatarImage from "@/components/share/AvatarImage";
 import { Menu, X, User, Bell } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
@@ -34,7 +35,8 @@ export default function Navbar({ lang = "nl" }: NavbarProps) {
 
   // User profile fetch
   const { data: useData } = useQuery({
-    queryKey: ["userProfile"],
+    queryKey: ["userProfile", user?.id],
+    enabled: !!TOKEN,
     queryFn: async () => {
       const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API_URL}/user/profile`, {
         headers: { Authorization: `Bearer ${TOKEN}` },
@@ -46,7 +48,7 @@ export default function Navbar({ lang = "nl" }: NavbarProps) {
 
   // Notification unread count
   const { data: notifData } = useQuery({
-    queryKey: ["notifCount"],
+    queryKey: ["notifCount", user?.id],
     queryFn: async () => {
       const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API_URL}/notification?limit=1`, {
         headers: { Authorization: `Bearer ${TOKEN}` },
@@ -250,7 +252,7 @@ export default function Navbar({ lang = "nl" }: NavbarProps) {
                 <PopoverTrigger asChild>
                   <button className="w-[48px] h-[48px] rounded-full bg-green-600 text-white flex items-center justify-center hover:bg-green-700 transition duration-200 overflow-hidden">
                     {user.profileImage ? (
-                      <Image
+                      <AvatarImage
                         src={user.profileImage}
                         alt="User Profile"
                         width={48}
@@ -381,7 +383,7 @@ export default function Navbar({ lang = "nl" }: NavbarProps) {
                 <>
                   <div className="flex items-center gap-3 mb-2">
                     {user.profileImage ? (
-                      <Image
+                      <AvatarImage
                         src={user.profileImage}
                         alt="Profile"
                         width={40}
