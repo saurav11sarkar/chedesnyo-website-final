@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Star, ChevronLeft, ChevronRight } from "lucide-react";
-import Image from "next/image";
+import AvatarImage from "@/components/share/AvatarImage";
 
 // ✅ Define TypeScript type for Review
 export type Review = {
@@ -27,7 +27,7 @@ export const ReviewCard: React.FC<Review> = ({
       {/* Header - Avatar, Name, and Rating */}
       <div className="flex items-start gap-4 mb-4">
         {/* Avatar */}
-        <Image
+        <AvatarImage
           width={200}
           height={200}
           src={avatar}

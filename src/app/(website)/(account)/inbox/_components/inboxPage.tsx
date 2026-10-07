@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Search, Paperclip, Send } from "lucide-react";
-import Image from "next/image";
+import AvatarImage from "@/components/share/AvatarImage";
 import { BreadcrumbHeader } from "@/components/ReusableCard/SubHero";
 import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
@@ -24,7 +24,7 @@ function InboxPage() {
 
   // -------------------- Fetch Conversations --------------------
   const { data: convRes } = useQuery({
-    queryKey: ["conversations"],
+    queryKey: ["conversations", userId],
     queryFn: async () => {
       const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API_URL}/conversation`, {
         headers: { Authorization: `Bearer ${TOKEN}` },
@@ -32,7 +32,7 @@ function InboxPage() {
       const json = await res.json();
       return json.data;
     },
-    enabled: !!userId,
+    enabled: !!userId && !!TOKEN,
   });
 
   const conversations = convRes || [];
@@ -40,7 +40,7 @@ function InboxPage() {
 
   // -------------------- Fetch Messages --------------------
   const fetchMessages = useCallback(async () => {
-    if (!selectedConversation) return;
+    if (!selectedConversation || !TOKEN) return;
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/message/${selectedConversation._id}`,
       {
@@ -83,7 +83,7 @@ function InboxPage() {
 
   // -------------------- Send Message --------------------
   const handleSendMessage = async () => {
-    if (!messageInput.trim() || !selectedConversation) return;
+    if (!messageInput.trim() || !selectedConversation || !TOKEN) return;
 
     const receiverId = selectedConversation.members.find((m: any) => m._id !== userId)?._id;
     const payload = {
@@ -163,10 +163,10 @@ function InboxPage() {
                     selectedChat === i ? "bg-green-50" : ""
                   }`}
                 >
-                  <Image
+                  <AvatarImage
                     width={48}
                     height={48}
-                    src={otherUser?.profileImage || "/noavatar.png"}
+                    src={otherUser?.profileImage || ""}
                     alt="avatar"
                     className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover"
                   />
@@ -192,10 +192,10 @@ function InboxPage() {
           {selectedConversation && (
             <>
               <div className="p-4 md:p-6 border border-gray-200 bg-white flex items-center gap-3">
-                <Image
+                <AvatarImage
                   width={48}
                   height={48}
-                  src={selectedConversation.members.find((m: any) => m._id !== userId)?.profileImage || "/noavatar.png"}
+                  src={selectedConversation.members.find((m: any) => m._id !== userId)?.profileImage || ""}
                   alt="User"
                   className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover"
                 />

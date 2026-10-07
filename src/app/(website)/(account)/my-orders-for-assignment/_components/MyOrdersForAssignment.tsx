@@ -17,7 +17,8 @@ function MyOrders() {
 
   // ✅ Fetch orders
   const { data: ordersData, isLoading } = useQuery({
-    queryKey: ["my-orders"],
+    queryKey: ["my-orders", session.data?.user?.id],
+    enabled: !!TOKEN,
     queryFn: async () => {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/payment/my/all`,

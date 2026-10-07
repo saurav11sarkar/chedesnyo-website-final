@@ -41,7 +41,8 @@ function UploadNewCourse() {
 
    // ✅ Fetch user profile
   const { data: useData } = useQuery({
-    queryKey: ["userProfile"],
+    queryKey: ["userProfile", session.data?.user?.id],
+    enabled: !!TOKEN,
     queryFn: async () => {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/user/profile`,

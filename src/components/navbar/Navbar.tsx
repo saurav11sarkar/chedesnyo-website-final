@@ -3,12 +3,12 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import AvatarImage from "@/components/share/AvatarImage";
 import { Menu, X, User, Bell } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useQuery } from "@tanstack/react-query";
-import { useLanguage } from "@/provider/TranslateProvider";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
 type NavLink = { label: string; href: string };
 
@@ -16,9 +16,7 @@ interface NavbarProps {
   lang?: "en" | "nl"; // English or Dutch
 }
 
-export default function Navbar({ lang: overrideLanguage }: NavbarProps) {
-  const { language } = useLanguage();
-  const lang = overrideLanguage ?? language;
+export default function Navbar({ lang = "nl" }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -35,9 +33,22 @@ export default function Navbar({ lang: overrideLanguage }: NavbarProps) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // User profile fetch
+  const { data: useData } = useQuery({
+    queryKey: ["userProfile", user?.id],
+    enabled: !!TOKEN,
+    queryFn: async () => {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API_URL}/user/profile`, {
+        headers: { Authorization: `Bearer ${TOKEN}` },
+      });
+      if (!res.ok) throw new Error("Gebruikersprofiel ophalen mislukt");
+      return res.json();
+    },
+  });
+
   // Notification unread count
   const { data: notifData } = useQuery({
-    queryKey: ["notifCount"],
+    queryKey: ["notifCount", user?.id],
     queryFn: async () => {
       const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API_URL}/notification?limit=1`, {
         headers: { Authorization: `Bearer ${TOKEN}` },
@@ -50,6 +61,47 @@ export default function Navbar({ lang: overrideLanguage }: NavbarProps) {
   });
 
   const unreadCount: number = notifData?.meta?.unreadCount || 0;
+
+  // Stripe mutations
+  const createStripDashboard = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/user/create-stripe-account`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${TOKEN}`,
+          },
+        }
+      );
+      if (!res.ok) throw new Error("Stripe-account aanmaken mislukt");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      const url = data?.data?.url;
+      if (url) window.location.href = url;
+      else alert("Stripe-onboarding-URL niet gevonden!");
+    },
+    onError: () => alert("Stripe-onboarding mislukt. Probeer het opnieuw."),
+  });
+
+  const fetchStripeDashboardLink = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API_URL}/user/dashboard-link`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${TOKEN}` },
+      });
+      if (!res.ok) throw new Error("Stripe-dashboardlink ophalen mislukt");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      const url = data?.data?.url;
+      if (url) window.location.href = url;
+      else alert("Stripe-dashboard-URL niet gevonden!");
+    },
+    onError: () => alert("Stripe-dashboard ophalen mislukt. Probeer het opnieuw."),
+  });
 
   const handleLogout = async () => {
     setIsPopoverOpen(false);
@@ -142,8 +194,7 @@ export default function Navbar({ lang: overrideLanguage }: NavbarProps) {
   return (
     <>
       <nav
-        translate="no"
-        className={`notranslate fixed top-0 left-0 w-full h-20 z-50 transition-all duration-300 bg-white border-b border-gray-200 ${
+        className={`fixed top-0 left-0 w-full h-20 z-50 transition-all duration-300 bg-white border-b border-gray-200 ${
           isScrolled ? "shadow-lg" : "shadow-sm"
         }`}
       >
@@ -201,7 +252,7 @@ export default function Navbar({ lang: overrideLanguage }: NavbarProps) {
                 <PopoverTrigger asChild>
                   <button className="w-[48px] h-[48px] rounded-full bg-green-600 text-white flex items-center justify-center hover:bg-green-700 transition duration-200 overflow-hidden">
                     {user.profileImage ? (
-                      <Image
+                      <AvatarImage
                         src={user.profileImage}
                         alt="User Profile"
                         width={48}
@@ -214,7 +265,7 @@ export default function Navbar({ lang: overrideLanguage }: NavbarProps) {
                   </button>
                 </PopoverTrigger>
 
-                <PopoverContent translate="no" className="notranslate p-0 w-[300px] max-h-[80vh] overflow-y-auto shadow-lg border border-gray-200">
+                <PopoverContent className="p-0 w-[300px] max-h-[80vh] overflow-y-auto shadow-lg border border-gray-200">
                   {/* Email & Role */}
                   <div className="px-4 py-3 bg-green-50 border-b border-gray-200">
                     <p className="text-sm font-semibold text-gray-700 truncate text-center">
@@ -244,14 +295,26 @@ export default function Navbar({ lang: overrideLanguage }: NavbarProps) {
                     })}
 
                     {/* Stripe Section */}
-                    {["business", "seles"].includes(user?.role || "") && (
-                      <Link
-                        href="/add_bank_account"
-                        onClick={() => setIsPopoverOpen(false)}
+                    {useData?.data?.stripeAccountId ? (
+                      <button
+                        onClick={() => {
+                          fetchStripeDashboardLink.mutate();
+                          setIsPopoverOpen(false);
+                        }}
                         className="block w-full text-left px-4 py-2 text-gray-700 text-sm hover:bg-gray-100"
                       >
-                        {lang === "en" ? "Manage Stripe Account" : "Stripe-account beheren"}
-                      </Link>
+                        {lang === "en" ? "Stripe Dashboard" : "Stripe-dashboard"}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          createStripDashboard.mutate();
+                          setIsPopoverOpen(false);
+                        }}
+                        className="block w-full text-left px-4 py-2 text-gray-700 text-sm hover:bg-gray-100"
+                      >
+                        {lang === "en" ? "Add Stripe Account" : "Stripe-account toevoegen"}
+                      </button>
                     )}
 
                     {/* Logout */}
@@ -286,9 +349,6 @@ export default function Navbar({ lang: overrideLanguage }: NavbarProps) {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            aria-label={lang === "en" ? (isOpen ? "Close menu" : "Open menu") : (isOpen ? "Menu sluiten" : "Menu openen")}
-            aria-expanded={isOpen}
-            aria-controls="mobile-menu"
             className="md:hidden p-2 text-gray-600 hover:text-gray-900"
           >
             {isOpen ? <X size={24} /> : <Menu size={24} />}
@@ -297,7 +357,7 @@ export default function Navbar({ lang: overrideLanguage }: NavbarProps) {
 
         {/* Mobile Menu */}
         {isOpen && (
-          <div id="mobile-menu" className="md:hidden fixed top-20 left-0 w-full h-[calc(100vh-5rem)] overflow-y-auto border-t border-gray-200 bg-white shadow-md z-50">
+          <div className="md:hidden fixed top-20 left-0 w-full h-[calc(100vh-5rem)] overflow-y-auto border-t border-gray-200 bg-white shadow-md z-50">
             <div className="flex flex-col gap-2 px-4 py-4">
               {navLinks.map((link) => {
                 const isActive = checkIsActive(link.href); // ✅ Updated
@@ -323,7 +383,7 @@ export default function Navbar({ lang: overrideLanguage }: NavbarProps) {
                 <>
                   <div className="flex items-center gap-3 mb-2">
                     {user.profileImage ? (
-                      <Image
+                      <AvatarImage
                         src={user.profileImage}
                         alt="Profile"
                         width={40}
@@ -357,14 +417,26 @@ export default function Navbar({ lang: overrideLanguage }: NavbarProps) {
                   })}
 
                   {/* Stripe Section */}
-                  {["business", "seles"].includes(user?.role || "") && (
-                    <Link
-                      href="/add_bank_account"
-                      onClick={() => setIsOpen(false)}
+                  {useData?.data?.stripeAccountId ? (
+                    <button
+                      onClick={() => {
+                        fetchStripeDashboardLink.mutate();
+                        setIsOpen(false);
+                      }}
                       className="block w-full text-left px-4 py-2 text-gray-700 text-sm rounded hover:bg-gray-100 transition"
                     >
-                      {lang === "en" ? "Manage Stripe Account" : "Stripe-account beheren"}
-                    </Link>
+                      {lang === "en" ? "Stripe Dashboard" : "Stripe-dashboard"}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        createStripDashboard.mutate();
+                        setIsOpen(false);
+                      }}
+                      className="block w-full text-left px-4 py-2 text-gray-700 text-sm rounded hover:bg-gray-100 transition"
+                    >
+                      {lang === "en" ? "Add Stripe Account" : "Stripe-account toevoegen"}
+                    </button>
                   )}
 
                   {/* Logout */}

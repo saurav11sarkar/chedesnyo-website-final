@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
+import AvatarImage from "@/components/share/AvatarImage";
 import Link from "next/link";
 
 // ✅ Type for Freelancer
@@ -28,7 +28,7 @@ export const BusinessesCard: React.FC<BusinessesCard> = ({
     <div className="bg-white rounded-2xl shadow-[0px_4px_16px_0px_#00000010] overflow-hidden flex flex-col sm:flex-row h-full transition-transform hover:scale-[1.02] duration-300">
       {/* Image Section */}
       <div className="w-full sm:w-64 h-56 sm:h-auto flex-shrink-0 bg-green-50">
-        <Image
+        <AvatarImage
           width={400}
           height={400}
           src={image}
