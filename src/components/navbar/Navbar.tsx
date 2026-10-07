@@ -214,7 +214,7 @@ export default function Navbar({ lang: overrideLanguage }: NavbarProps) {
                   </button>
                 </PopoverTrigger>
 
-                <PopoverContent className="p-0 w-[300px] max-h-[80vh] overflow-y-auto shadow-lg border border-gray-200">
+                <PopoverContent translate="no" className="notranslate p-0 w-[300px] max-h-[80vh] overflow-y-auto shadow-lg border border-gray-200">
                   {/* Email & Role */}
                   <div className="px-4 py-3 bg-green-50 border-b border-gray-200">
                     <p className="text-sm font-semibold text-gray-700 truncate text-center">
@@ -286,6 +286,9 @@ export default function Navbar({ lang: overrideLanguage }: NavbarProps) {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
+            aria-label={lang === "en" ? (isOpen ? "Close menu" : "Open menu") : (isOpen ? "Menu sluiten" : "Menu openen")}
+            aria-expanded={isOpen}
+            aria-controls="mobile-menu"
             className="md:hidden p-2 text-gray-600 hover:text-gray-900"
           >
             {isOpen ? <X size={24} /> : <Menu size={24} />}
@@ -294,7 +297,7 @@ export default function Navbar({ lang: overrideLanguage }: NavbarProps) {
 
         {/* Mobile Menu */}
         {isOpen && (
-          <div className="md:hidden fixed top-20 left-0 w-full h-[calc(100vh-5rem)] overflow-y-auto border-t border-gray-200 bg-white shadow-md z-50">
+          <div id="mobile-menu" className="md:hidden fixed top-20 left-0 w-full h-[calc(100vh-5rem)] overflow-y-auto border-t border-gray-200 bg-white shadow-md z-50">
             <div className="flex flex-col gap-2 px-4 py-4">
               {navLinks.map((link) => {
                 const isActive = checkIsActive(link.href); // ✅ Updated

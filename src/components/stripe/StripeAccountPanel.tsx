@@ -84,7 +84,7 @@ type StripeAccountStatus = {
 };
 
 class StripeRequestError extends Error {
-  constructor(message: string, readonly status: number) {
+  constructor(message: string, readonly status: number, readonly code: keyof typeof messages.nl = "requestFailed") {
     super(message);
   }
 }
@@ -97,7 +97,7 @@ async function stripeRequest<T>(
   signal?: AbortSignal,
 ): Promise<T> {
   const apiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL;
-  if (!apiUrl) throw new Error(copy.connectionMissing);
+  if (!apiUrl) throw new StripeRequestError(copy.connectionMissing, 0, "connectionMissing");
 
   const response = await fetch(`${apiUrl.replace(/\/$/, "")}/user/${path}`, {
     method,
@@ -112,9 +112,10 @@ async function stripeRequest<T>(
         ? copy.sessionExpired
         : response.status === 403 ? copy.forbidden : copy.requestFailed,
       response.status,
+      response.status === 401 ? "sessionExpired" : response.status === 403 ? "forbidden" : "requestFailed",
     );
   }
-  if (!result.data) throw new Error(copy.noData);
+  if (!result.data) throw new StripeRequestError(copy.noData, 0, "noData");
   return result.data as T;
 }
 
@@ -164,7 +165,7 @@ export default function StripeAccountPanel({
       );
       const url = new URL(result.url);
       if (url.protocol !== "https:" || !(url.hostname === "stripe.com" || url.hostname.endsWith(".stripe.com"))) {
-        throw new Error(copy.invalidLink);
+        throw new StripeRequestError(copy.invalidLink, 0, "invalidLink");
       }
       if (!controller.signal.aborted) window.location.assign(url.toString());
     } catch (error) {
@@ -218,7 +219,7 @@ export default function StripeAccountPanel({
     description = copy.unavailableDescription;
   } else if (error) {
     title = copy.errorTitle;
-    description = error.message;
+    description = error instanceof StripeRequestError ? copy[error.code] : copy.requestFailed;
   } else if (ready) {
     title = copy.readyTitle;
     description = copy.readyDescription;

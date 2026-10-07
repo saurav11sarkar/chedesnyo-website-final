@@ -12,7 +12,7 @@ export function installGoogleTranslateDomPatch(root: Node): () => void {
   const installed = installations.get(document);
   if (installed) {
     installed.users += 1;
-    return release;
+    return releaseOnce();
   }
 
   const nodePrototype = view.Node.prototype;
@@ -30,6 +30,8 @@ export function installGoogleTranslateDomPatch(root: Node): () => void {
     node instanceof view.HTMLElement &&
     node.tagName === "FONT" &&
     node.style.verticalAlign === "inherit";
+  const belongsToReplacement = (source: Node, wrapper: HTMLElement) =>
+    source.parentNode === null || wrapper.contains(source);
 
   const remember = (source: Node, parent: Node, wrapper: HTMLElement) => {
     replacements.set(source, { parent, wrapper });
@@ -45,7 +47,7 @@ export function installGoogleTranslateDomPatch(root: Node): () => void {
       if (record.removedNodes.length === 1 && wrappers.length === 1) {
         const removed = record.removedNodes[0];
         const source = isText(removed) ? removed : sources.get(removed);
-        if (source && source.parentNode !== record.target) {
+        if (source && belongsToReplacement(source, wrappers[0])) {
           remember(source, record.target, wrappers[0]);
         }
       }
@@ -65,7 +67,7 @@ export function installGoogleTranslateDomPatch(root: Node): () => void {
         if (
           candidate?.parent === record.target &&
           candidate.wrapper.parentNode === record.target &&
-          removed.parentNode !== record.target &&
+          belongsToReplacement(removed, candidate.wrapper) &&
           (record.previousSibling === candidate.wrapper ||
             record.nextSibling === candidate.wrapper)
         ) {
@@ -88,6 +90,7 @@ export function installGoogleTranslateDomPatch(root: Node): () => void {
     if (!replacement) return undefined;
     if (
       node.parentNode === replacement.parent ||
+      !belongsToReplacement(node, replacement.wrapper) ||
       replacement.wrapper.parentNode !== replacement.parent
     ) {
       replacements.delete(node);
@@ -152,8 +155,10 @@ export function installGoogleTranslateDomPatch(root: Node): () => void {
         ? replacement.wrapper
         : child;
     originalReplaceChild.call(this, actualNode(newNode), oldNode);
-    replacements.delete(child);
-    if (replacement) sources.delete(replacement.wrapper);
+    if (newNode !== child) {
+      replacements.delete(child);
+      if (replacement) sources.delete(replacement.wrapper);
+    }
     recordMove(newNode, this);
     return child;
   };
@@ -215,15 +220,20 @@ export function installGoogleTranslateDomPatch(root: Node): () => void {
     },
   };
   installations.set(document, installation);
-  return release;
+  return releaseOnce();
 
-  function release() {
-    const current = installations.get(document);
-    if (!current) return;
-    current.users -= 1;
-    if (current.users === 0) {
-      current.dispose();
-      installations.delete(document);
-    }
+  function releaseOnce() {
+    let released = false;
+    return () => {
+      if (released) return;
+      released = true;
+      const current = installations.get(document);
+      if (!current) return;
+      current.users -= 1;
+      if (current.users === 0) {
+        current.dispose();
+        installations.delete(document);
+      }
+    };
   }
 }

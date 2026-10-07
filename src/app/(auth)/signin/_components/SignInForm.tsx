@@ -72,9 +72,13 @@ export default function SignInForm() {
         const requestedCallback = new URLSearchParams(window.location.search).get("callbackUrl");
         let destination = "/";
         if (requestedCallback?.startsWith("/")) {
-          const callback = new URL(requestedCallback, window.location.origin);
-          if (callback.origin === window.location.origin) {
-            destination = `${callback.pathname}${callback.search}${callback.hash}`;
+          try {
+            const callback = new URL(requestedCallback, window.location.origin);
+            if (callback.origin === window.location.origin) {
+              destination = `${callback.pathname}${callback.search}${callback.hash}`;
+            }
+          } catch {
+            // Invalid callback URLs return to the homepage after a successful login.
           }
         }
         router.push(destination);
