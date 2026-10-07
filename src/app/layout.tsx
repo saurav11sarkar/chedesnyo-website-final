@@ -3,14 +3,8 @@ import localFont from "next/font/local";
 import "./globals.css";
 import AppProvider from "@/provider/AppProvider";
 import AuthProvider from "@/provider/AuthProvider";
-import Script from "next/script";
-import dynamic from "next/dynamic";
-import { Suspense } from "react";
 import GoogleTranslatePatch from "@/components/GoogleTranslatePatch";
-
-// ✅ CLIENT ONLY IMPORT (IMPORTANT)
-const LangConfig = dynamic(() => import("./lang-config"), { ssr: false });
-const TranslateProvider = dynamic(() => import("@/provider/TranslateProvider"), { ssr: false });
+import TranslateProvider from "@/provider/TranslateProvider";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -34,29 +28,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="nl" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`} suppressHydrationWarning>
         <AuthProvider>
           <AppProvider>
-            {/* Google translate container — hidden, positioned off-screen */}
-            <div id="google_translate_element" aria-hidden="true"></div>
-
             <GoogleTranslatePatch />
-
-            {/* Loaded only on client */}
-            <Suspense fallback={null}>
-              <LangConfig />
-            </Suspense>
-            <Suspense fallback={null}>
-              <TranslateProvider />
-            </Suspense>
-
-            {children}
-
-            <Script
-              src="//translate.google.com/translate_a/element.js?cb=TranslateInit"
-              strategy="afterInteractive"
-            />
+            <TranslateProvider>{children}</TranslateProvider>
           </AppProvider>
         </AuthProvider>
       </body>

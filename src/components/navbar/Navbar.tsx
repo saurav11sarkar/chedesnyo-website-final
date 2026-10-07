@@ -7,7 +7,8 @@ import { Menu, X, User, Bell } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { useLanguage } from "@/provider/TranslateProvider";
 
 type NavLink = { label: string; href: string };
 
@@ -15,7 +16,9 @@ interface NavbarProps {
   lang?: "en" | "nl"; // English or Dutch
 }
 
-export default function Navbar({ lang = "nl" }: NavbarProps) {
+export default function Navbar({ lang: overrideLanguage }: NavbarProps) {
+  const { language } = useLanguage();
+  const lang = overrideLanguage ?? language;
   const [isOpen, setIsOpen] = useState(false);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -32,18 +35,6 @@ export default function Navbar({ lang = "nl" }: NavbarProps) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // User profile fetch
-  const { data: useData } = useQuery({
-    queryKey: ["userProfile"],
-    queryFn: async () => {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API_URL}/user/profile`, {
-        headers: { Authorization: `Bearer ${TOKEN}` },
-      });
-      if (!res.ok) throw new Error("Gebruikersprofiel ophalen mislukt");
-      return res.json();
-    },
-  });
-
   // Notification unread count
   const { data: notifData } = useQuery({
     queryKey: ["notifCount"],
@@ -59,47 +50,6 @@ export default function Navbar({ lang = "nl" }: NavbarProps) {
   });
 
   const unreadCount: number = notifData?.meta?.unreadCount || 0;
-
-  // Stripe mutations
-  const createStripDashboard = useMutation({
-    mutationFn: async () => {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/user/create-stripe-account`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${TOKEN}`,
-          },
-        }
-      );
-      if (!res.ok) throw new Error("Stripe-account aanmaken mislukt");
-      return res.json();
-    },
-    onSuccess: (data) => {
-      const url = data?.data?.url;
-      if (url) window.location.href = url;
-      else alert("Stripe-onboarding-URL niet gevonden!");
-    },
-    onError: () => alert("Stripe-onboarding mislukt. Probeer het opnieuw."),
-  });
-
-  const fetchStripeDashboardLink = useMutation({
-    mutationFn: async () => {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API_URL}/user/dashboard-link`, {
-        method: "GET",
-        headers: { Authorization: `Bearer ${TOKEN}` },
-      });
-      if (!res.ok) throw new Error("Stripe-dashboardlink ophalen mislukt");
-      return res.json();
-    },
-    onSuccess: (data) => {
-      const url = data?.data?.url;
-      if (url) window.location.href = url;
-      else alert("Stripe-dashboard-URL niet gevonden!");
-    },
-    onError: () => alert("Stripe-dashboard ophalen mislukt. Probeer het opnieuw."),
-  });
 
   const handleLogout = async () => {
     setIsPopoverOpen(false);
@@ -192,7 +142,8 @@ export default function Navbar({ lang = "nl" }: NavbarProps) {
   return (
     <>
       <nav
-        className={`fixed top-0 left-0 w-full h-20 z-50 transition-all duration-300 bg-white border-b border-gray-200 ${
+        translate="no"
+        className={`notranslate fixed top-0 left-0 w-full h-20 z-50 transition-all duration-300 bg-white border-b border-gray-200 ${
           isScrolled ? "shadow-lg" : "shadow-sm"
         }`}
       >
@@ -293,26 +244,14 @@ export default function Navbar({ lang = "nl" }: NavbarProps) {
                     })}
 
                     {/* Stripe Section */}
-                    {useData?.data?.stripeAccountId ? (
-                      <button
-                        onClick={() => {
-                          fetchStripeDashboardLink.mutate();
-                          setIsPopoverOpen(false);
-                        }}
+                    {["business", "seles"].includes(user?.role || "") && (
+                      <Link
+                        href="/add_bank_account"
+                        onClick={() => setIsPopoverOpen(false)}
                         className="block w-full text-left px-4 py-2 text-gray-700 text-sm hover:bg-gray-100"
                       >
-                        {lang === "en" ? "Stripe Dashboard" : "Stripe-dashboard"}
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => {
-                          createStripDashboard.mutate();
-                          setIsPopoverOpen(false);
-                        }}
-                        className="block w-full text-left px-4 py-2 text-gray-700 text-sm hover:bg-gray-100"
-                      >
-                        {lang === "en" ? "Add Stripe Account" : "Stripe-account toevoegen"}
-                      </button>
+                        {lang === "en" ? "Manage Stripe Account" : "Stripe-account beheren"}
+                      </Link>
                     )}
 
                     {/* Logout */}
@@ -415,26 +354,14 @@ export default function Navbar({ lang = "nl" }: NavbarProps) {
                   })}
 
                   {/* Stripe Section */}
-                  {useData?.data?.stripeAccountId ? (
-                    <button
-                      onClick={() => {
-                        fetchStripeDashboardLink.mutate();
-                        setIsOpen(false);
-                      }}
+                  {["business", "seles"].includes(user?.role || "") && (
+                    <Link
+                      href="/add_bank_account"
+                      onClick={() => setIsOpen(false)}
                       className="block w-full text-left px-4 py-2 text-gray-700 text-sm rounded hover:bg-gray-100 transition"
                     >
-                      {lang === "en" ? "Stripe Dashboard" : "Stripe-dashboard"}
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        createStripDashboard.mutate();
-                        setIsOpen(false);
-                      }}
-                      className="block w-full text-left px-4 py-2 text-gray-700 text-sm rounded hover:bg-gray-100 transition"
-                    >
-                      {lang === "en" ? "Add Stripe Account" : "Stripe-account toevoegen"}
-                    </button>
+                      {lang === "en" ? "Manage Stripe Account" : "Stripe-account beheren"}
+                    </Link>
                   )}
 
                   {/* Logout */}

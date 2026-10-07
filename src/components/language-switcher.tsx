@@ -1,86 +1,32 @@
-'use client';
+"use client";
 
-import dynamic from 'next/dynamic';
-import { useEffect, useState } from 'react';
-import { parseCookies, setCookie } from 'nookies';
-import { isClient } from '@/lib/utils/client-utils';
+import { translationConfig } from "@/lib/translation";
+import { useLanguage } from "@/provider/TranslateProvider";
 
-type GoogleTranslationConfig = {
-  defaultLanguage: string;
-  languages: { name: string; title: string }[];
-};
-
-declare global {
-  interface Window {
-    __GOOGLE_TRANSLATION_CONFIG__?: GoogleTranslationConfig;
-  }
-}
-
-const COOKIE_NAME = 'googtrans';
-
-const LanguageSwitcherComponent = () => {
-  const [currentLang, setCurrentLang] = useState('nl');
-  const [config, setConfig] = useState<GoogleTranslationConfig | null>(null);
-
-  useEffect(() => {
-    if (!isClient) return;
-
-    // Function to handle configuration
-    const handleConfig = () => {
-      const translationConfig = window.__GOOGLE_TRANSLATION_CONFIG__;
-      if (!translationConfig) return;
-
-      setConfig(translationConfig);
-      const cookie = parseCookies()[COOKIE_NAME];
-      const lang = cookie?.split('/')?.[2] || translationConfig.defaultLanguage;
-      setCurrentLang(lang);
-    };
-
-    // Check if config already exists
-    if (window.__GOOGLE_TRANSLATION_CONFIG__) {
-      handleConfig();
-    }
-
-    // Listen for config ready event
-    window.addEventListener('translationConfigReady', handleConfig);
-    
-    return () => {
-      window.removeEventListener('translationConfigReady', handleConfig);
-    };
-  }, []);
-
-  const switchLang = (lang: string) => {
-    setCookie(undefined, COOKIE_NAME, `/auto/${lang}`, { path: '/' });
-    if (isClient) {
-      window.location.reload();
-    }
-  };
-
-  if (!config) {
-    return <div className="text-center p-2 text-xs text-gray-400">Laden...</div>;
-  }
+export default function LanguageSwitcher() {
+  const { language, changeLanguage } = useLanguage();
 
   return (
-    <div className="flex justify-center gap-3 p-3 flex-wrap bg-white border-t">
-      {config.languages.map((l) => (
+    <div
+      className="notranslate flex justify-center gap-3 p-3 flex-wrap bg-white border-t"
+      translate="no"
+      role="group"
+      aria-label={language === "en" ? "Language" : "Taal"}
+    >
+      {translationConfig.languages.map(({ name, title }) => (
         <button
-          key={l.name}
-          onClick={() => switchLang(l.name)}
+          key={name}
+          type="button"
+          lang={name}
+          aria-pressed={language === name}
+          onClick={() => changeLanguage(name)}
           className={`px-4 py-1.5 rounded text-sm font-medium transition-all ${
-            currentLang === l.name
-              ? 'bg-orange-500 text-white'
-              : 'bg-gray-100 hover:bg-gray-200'
+            language === name ? "bg-orange-500 text-white" : "bg-gray-100 hover:bg-gray-200"
           }`}
         >
-          {l.title}
+          {title}
         </button>
       ))}
     </div>
   );
-};
-
-const LanguageSwitcher = dynamic(() => Promise.resolve(LanguageSwitcherComponent), { 
-  ssr: false 
-});
-
-export default LanguageSwitcher;
+}

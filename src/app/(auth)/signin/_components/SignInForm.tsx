@@ -69,7 +69,15 @@ export default function SignInForm() {
 
       // Short delay so toast is visible
       setTimeout(() => {
-        router.push("/"); // redirect after toast
+        const requestedCallback = new URLSearchParams(window.location.search).get("callbackUrl");
+        let destination = "/";
+        if (requestedCallback?.startsWith("/")) {
+          const callback = new URL(requestedCallback, window.location.origin);
+          if (callback.origin === window.location.origin) {
+            destination = `${callback.pathname}${callback.search}${callback.hash}`;
+          }
+        }
+        router.push(destination);
       }, 500);
     } catch (err) {
       const message =
