@@ -1,4 +1,5 @@
 import React from 'react'
+import LanguageSwitcher from '@/components/language-switcher'
 // import { Toaster } from 'sonner'
 
 function layout({children}: {children: React.ReactNode}) {
@@ -7,6 +8,7 @@ function layout({children}: {children: React.ReactNode}) {
       
       
         {children}
+        <LanguageSwitcher />
     </div>
   )
 }

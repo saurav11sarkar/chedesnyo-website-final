@@ -1,11 +1,10 @@
 'use client';
 
-import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { scrollToTop } from '@/lib/utils/client-utils';
 
-const PageLayoutBase = ({
+const PageLayout = ({
   children,
 }: {
   children: React.ReactNode;
@@ -18,9 +17,5 @@ const PageLayoutBase = ({
 
   return <>{children}</>;
 };
-
-const PageLayout = dynamic(() => Promise.resolve(PageLayoutBase), {
-  ssr: false,
-});
 
 export default PageLayout;
