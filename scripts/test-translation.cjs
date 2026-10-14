@@ -338,3 +338,91 @@ test("provider survives Strict Mode and initializes once when Google's callback 
     restoreGlobals();
   }
 });
+
+test("changeLanguage switches language smoothly in-place without page reload", (t) => {
+  const window = fixture(t);
+  const restoreGlobals = exposeWindow(window);
+  let reloadCount = 0;
+  window.location.reload = () => { reloadCount++; };
+  const scripts = [];
+  const Script = (props) => { scripts.push(props); return null; };
+  const { default: TranslateProvider, useLanguage } = loadTypeScript("src/provider/TranslateProvider.tsx", {
+    "@/lib/translation": translation,
+    "next/script": Script,
+  });
+
+  const container = window.document.createElement("div");
+  window.document.body.appendChild(container);
+  const root = createRoot(container);
+
+  let currentContext;
+  const Consumer = () => {
+    currentContext = useLanguage();
+    return React.createElement("button", { onClick: () => currentContext.changeLanguage("en") }, "Switch to EN");
+  };
+
+  try {
+    act(() => root.render(
+      React.createElement(TranslateProvider, null, React.createElement(Consumer))
+    ));
+
+    window.google = { translate: { TranslateElement: class {
+      constructor(options, id) {
+        const combo = window.document.createElement("select");
+        combo.className = "goog-te-combo";
+        const optDefault = window.document.createElement("option");
+        optDefault.value = "";
+        const optEn = window.document.createElement("option");
+        optEn.value = "en";
+        combo.appendChild(optDefault);
+        combo.appendChild(optEn);
+        window.document.getElementById(id).appendChild(combo);
+      }
+    } } };
+
+    act(() => { window.TranslateInit(); scripts.at(-1).onReady(); });
+
+    const combo = window.document.querySelector(".goog-te-combo");
+    let changeEvents = 0;
+    combo.addEventListener("change", () => { changeEvents++; });
+
+    // Switch to English
+    act(() => { currentContext.changeLanguage("en"); });
+
+    assert.equal(reloadCount, 0, "No page reload should be called");
+    assert.equal(currentContext.language, "en");
+    assert.equal(combo.value, "en");
+    assert.equal(changeEvents, 1, "Change event should be dispatched on combo");
+
+    // Switch back to Nederlands
+    act(() => { currentContext.changeLanguage("nl"); });
+
+    assert.equal(reloadCount, 0, "No page reload should be called");
+    assert.equal(currentContext.language, "nl");
+    assert.equal(changeEvents, 2, "Change event should be dispatched on combo to revert");
+  } finally {
+    act(() => root.unmount());
+    restoreGlobals();
+  }
+});
+
+test("appendChild and insertBefore safely prevent HierarchyRequestError when child contains parent", (t) => {
+  const window = fixture(t);
+  install(t, window);
+  const outer = window.document.createElement("div");
+  const inner = window.document.createElement("div");
+  outer.appendChild(inner);
+  window.document.body.appendChild(outer);
+
+  // Attempting to append outer into inner (outer contains inner)
+  assert.doesNotThrow(() => {
+    inner.appendChild(outer);
+  });
+
+  // Attempting to insert outer into inner
+  assert.doesNotThrow(() => {
+    inner.insertBefore(outer, null);
+  });
+});
+
+

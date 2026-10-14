@@ -99,6 +99,17 @@ export function installGoogleTranslateDomPatch(root: Node): () => void {
     return replacement;
   };
 
+  const actualNodeFor = (node: Node, parent: Node): Node => {
+    const replacement = replacementFor(node);
+    if (!replacement) return node;
+    const wrapper = replacement.wrapper;
+    // An element can never be appended or inserted into itself or into its own descendant!
+    if (wrapper === parent || (wrapper.nodeType === 1 && (wrapper as Element).contains(parent))) {
+      return node;
+    }
+    return wrapper;
+  };
+
   const actualNode = (node: Node) => replacementFor(node)?.wrapper ?? node;
   const recordMove = (node: Node, parent: Node) => {
     const replacement = replacements.get(node);
@@ -111,7 +122,11 @@ export function installGoogleTranslateDomPatch(root: Node): () => void {
     drain();
     const replacement = replacementFor(child);
     if (child.parentNode !== this && replacement?.parent === this) {
-      originalRemoveChild.call(this, replacement.wrapper);
+      try {
+        originalRemoveChild.call(this, replacement.wrapper);
+      } catch {
+        // Ignore if already unlinked
+      }
       replacements.delete(child);
       sources.delete(replacement.wrapper);
       return child;
@@ -131,15 +146,37 @@ export function installGoogleTranslateDomPatch(root: Node): () => void {
       referenceReplacement?.parent === this
         ? referenceReplacement.wrapper
         : referenceNode;
-    originalInsertBefore.call(this, actualNode(newNode), reference);
-    recordMove(newNode, this);
+    const target = actualNodeFor(newNode, this);
+    if (target === this || (target.nodeType === 1 && (target as Element).contains(this))) {
+      return newNode;
+    }
+    try {
+      originalInsertBefore.call(this, target, reference);
+      recordMove(newNode, this);
+    } catch (error: any) {
+      if (error?.name === "HierarchyRequestError") {
+        return newNode;
+      }
+      throw error;
+    }
     return newNode;
   };
 
   const appendChild = function <T extends Node>(this: Node, newNode: T): T {
     drain();
-    originalAppendChild.call(this, actualNode(newNode));
-    recordMove(newNode, this);
+    const target = actualNodeFor(newNode, this);
+    if (target === this || (target.nodeType === 1 && (target as Element).contains(this))) {
+      return newNode;
+    }
+    try {
+      originalAppendChild.call(this, target);
+      recordMove(newNode, this);
+    } catch (error: any) {
+      if (error?.name === "HierarchyRequestError") {
+        return newNode;
+      }
+      throw error;
+    }
     return newNode;
   };
 
@@ -154,7 +191,18 @@ export function installGoogleTranslateDomPatch(root: Node): () => void {
       child.parentNode !== this && replacement?.parent === this
         ? replacement.wrapper
         : child;
-    originalReplaceChild.call(this, actualNode(newNode), oldNode);
+    const target = actualNodeFor(newNode, this);
+    if (target === this || (target.nodeType === 1 && (target as Element).contains(this))) {
+      return child;
+    }
+    try {
+      originalReplaceChild.call(this, target, oldNode);
+    } catch (error: any) {
+      if (error?.name === "HierarchyRequestError") {
+        return child;
+      }
+      throw error;
+    }
     if (newNode !== child) {
       replacements.delete(child);
       if (replacement) sources.delete(replacement.wrapper);

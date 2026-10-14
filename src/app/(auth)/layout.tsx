@@ -8,7 +8,9 @@ function layout({children}: {children: React.ReactNode}) {
       
       
         {children}
-        <LanguageSwitcher />
+        <div className="py-4 flex justify-center">
+          <LanguageSwitcher variant="full" />
+        </div>
     </div>
   )
 }

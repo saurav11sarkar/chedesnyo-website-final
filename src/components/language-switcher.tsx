@@ -1,32 +1,81 @@
 "use client";
 
-import { translationConfig } from "@/lib/translation";
+import { translationConfig, Language } from "@/lib/translation";
 import { useLanguage } from "@/provider/TranslateProvider";
 
-export default function LanguageSwitcher() {
-  const { language, changeLanguage } = useLanguage();
+interface LanguageSwitcherProps {
+  variant?: "compact" | "full";
+  className?: string;
+}
+
+export default function LanguageSwitcher({ variant = "full", className = "" }: LanguageSwitcherProps) {
+  const { language, changeLanguage, isTranslating } = useLanguage();
+
+  if (variant === "compact") {
+    return (
+      <div
+        className={`notranslate inline-flex items-center p-0.5 rounded-full bg-gray-100 border border-gray-200 select-none ${className}`}
+        translate="no"
+        role="group"
+        aria-label={language === "en" ? "Select Language" : "Selecteer Taal"}
+      >
+        {translationConfig.languages.map(({ name, title }) => {
+          const isActive = language === name;
+          return (
+            <button
+              key={name}
+              type="button"
+              lang={name}
+              disabled={isTranslating}
+              aria-pressed={isActive}
+              onClick={() => changeLanguage(name as Language)}
+              className={`px-2.5 py-1 text-xs font-semibold rounded-full transition-all duration-200 cursor-pointer ${
+                isActive
+                  ? "bg-green-600 text-white shadow-sm"
+                  : "text-gray-600 hover:text-green-700 hover:bg-gray-200/60"
+              }`}
+              title={title}
+            >
+              {name.toUpperCase()}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
 
   return (
     <div
-      className="notranslate flex justify-center gap-3 p-3 flex-wrap bg-white border-t"
+      className={`notranslate flex items-center justify-center gap-2 p-2 flex-wrap ${className}`}
       translate="no"
       role="group"
-      aria-label={language === "en" ? "Language" : "Taal"}
+      aria-label={language === "en" ? "Select Language" : "Selecteer Taal"}
     >
-      {translationConfig.languages.map(({ name, title }) => (
-        <button
-          key={name}
-          type="button"
-          lang={name}
-          aria-pressed={language === name}
-          onClick={() => changeLanguage(name)}
-          className={`px-4 py-1.5 rounded text-sm font-medium transition-all ${
-            language === name ? "bg-orange-500 text-white" : "bg-gray-100 hover:bg-gray-200"
-          }`}
-        >
-          {title}
-        </button>
-      ))}
+      <span className="text-xs font-medium text-gray-500 mr-1 hidden sm:inline">
+        {language === "en" ? "Language:" : "Taal:"}
+      </span>
+      <div className="inline-flex items-center p-1 rounded-lg bg-gray-100 border border-gray-200 gap-1">
+        {translationConfig.languages.map(({ name, title }) => {
+          const isActive = language === name;
+          return (
+            <button
+              key={name}
+              type="button"
+              lang={name}
+              disabled={isTranslating}
+              aria-pressed={isActive}
+              onClick={() => changeLanguage(name as Language)}
+              className={`px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 cursor-pointer ${
+                isActive
+                  ? "bg-green-600 text-white shadow-sm"
+                  : "text-gray-700 hover:text-green-700 hover:bg-white"
+              }`}
+            >
+              {title}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
