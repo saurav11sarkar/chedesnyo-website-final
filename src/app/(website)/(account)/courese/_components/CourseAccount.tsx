@@ -49,7 +49,8 @@ function CourseAccount() {
   const queryClient = useQueryClient();
 
   const { data: coursesData, isLoading, isError } = useQuery<CoursesApiResponse>({
-    queryKey: ["coursesData"],
+    queryKey: ["coursesData", session.data?.user?.id],
+    enabled: !!TOKEN,
     queryFn: async () => {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/course/my-course`,

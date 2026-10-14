@@ -2,7 +2,7 @@
 
 import React from "react";
 import { MessageCircle, Phone, Star, MapPin, Copy, Loader2 } from "lucide-react";
-import Image from "next/image";
+import AvatarImage from "@/components/share/AvatarImage";
 import { BreadcrumbHeader } from "@/components/ReusableCard/SubHero";
 import CustomerReviews from "@/components/share/CustomerReviews";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -105,7 +105,7 @@ function ExploreFreelancersDetails() {
             
             {/* Image */}
             <div className="w-full lg:w-1/3 h-[250px] sm:h-[300px] md:h-[300px] lg:h-[350px] border rounded-lg overflow-hidden shadow-sm">
-              <Image
+              <AvatarImage
                 width={400}
                 height={400}
                 src={data?.profileImage || "/images/freelancersImage.jpg"}

@@ -3,7 +3,7 @@ import { BreadcrumbHeader } from "@/components/ReusableCard/SubHero";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useSession } from "next-auth/react";
-import Image from "next/image";
+import AvatarImage from "@/components/share/AvatarImage";
 import React, { useState } from "react";
 
 type User = {
@@ -129,7 +129,7 @@ function Earnings() {
                   displayedEarnings.map((item) => (
                     <tr key={item._id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="px-4 py-3 text-sm text-gray-900 flex items-center gap-2">
-                        <Image
+                        <AvatarImage
                           width={400}
                           height={400}
                           src={item.user.profileImage}
