@@ -5,7 +5,12 @@ import { useState } from "react";
 
 const fallbackAvatar = "/images/avatar-placeholder.svg";
 
-export default function AvatarImage({ src, onError, ...props }: ImageProps) {
+export default function AvatarImage({
+  alt = "User avatar",
+  src,
+  onError,
+  ...props
+}: ImageProps) {
   const [failedSource, setFailedSource] = useState<ImageProps["src"] | null>(null);
   const isDefaultAvatar =
     typeof src === "string" &&
@@ -15,13 +20,13 @@ export default function AvatarImage({ src, onError, ...props }: ImageProps) {
 
   return (
     <Image
-      alt={props.alt || "User avatar"}
-      {...props}
+      alt={alt}
       src={imageSource}
       onError={(event) => {
         if (imageSource !== fallbackAvatar) setFailedSource(src);
         onError?.(event);
       }}
+      {...props}
     />
   );
 }
