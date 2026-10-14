@@ -15,6 +15,7 @@ export default function AvatarImage({ src, onError, ...props }: ImageProps) {
 
   return (
     <Image
+      alt={props.alt || "User avatar"}
       {...props}
       src={imageSource}
       onError={(event) => {
