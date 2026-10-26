@@ -57,6 +57,9 @@ export default function TranslateProvider({ children }: { children: React.ReactN
   const [scriptFailed, setScriptFailed] = useState(false);
   const initialized = useRef(false);
   const translateInstanceRef = useRef<GoogleTranslateInstance | null>(null);
+  // Keep the selected locale available to the Google callback without waiting
+  // for React to render again. The callback can arrive after a route change.
+  const languageRef = useRef<Language>(translationConfig.defaultLanguage);
 
   const triggerGoogleTranslation = useCallback((targetLang: Language): boolean => {
     if (typeof document === "undefined") return false;
@@ -163,6 +166,9 @@ export default function TranslateProvider({ children }: { children: React.ReactN
     // Reuse a widget across development effect replays and script callbacks.
     if (element.querySelector(".goog-te-combo")) {
       initialized.current = true;
+      if (languageRef.current !== translationConfig.defaultLanguage) {
+        triggerGoogleTranslation(languageRef.current);
+      }
       return;
     }
 
@@ -174,15 +180,21 @@ export default function TranslateProvider({ children }: { children: React.ReactN
         autoDisplay: false,
         multilanguagePage: true,
       }, "google_translate_element");
+      // A saved language is not always applied by the Google widget after a
+      // client-side navigation. Apply it once the combo has been created.
+      if (languageRef.current !== translationConfig.defaultLanguage) {
+        triggerGoogleTranslation(languageRef.current);
+      }
     } catch {
       initialized.current = false;
       setScriptFailed(true);
     }
-  }, []);
+  }, [triggerGoogleTranslation]);
 
   useEffect(() => {
     const selectedLanguage = readLanguage(document.cookie);
     saveLanguage(selectedLanguage);
+    languageRef.current = selectedLanguage;
     setLanguage(selectedLanguage);
     document.documentElement.lang = selectedLanguage;
     window.__GOOGLE_TRANSLATION_CONFIG__ = translationConfig;
@@ -283,13 +295,16 @@ export default function TranslateProvider({ children }: { children: React.ReactN
   }, [language, mounted, triggerGoogleTranslation]);
 
   const changeLanguage = useCallback((nextLanguage: Language) => {
-    if (nextLanguage === language) return;
+    // Read the ref so a quick second click is not ignored while React is
+    // still committing the first selection.
+    if (nextLanguage === languageRef.current) return;
 
     if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
     if (retryIntervalRef.current) clearInterval(retryIntervalRef.current);
 
     // 1. Immediately persist cookies and state
     saveLanguage(nextLanguage);
+    languageRef.current = nextLanguage;
     setLanguage(nextLanguage);
     document.documentElement.lang = nextLanguage;
 
@@ -297,6 +312,16 @@ export default function TranslateProvider({ children }: { children: React.ReactN
     setIsTranslating(true);
 
     // 3. Trigger DOM translation
+    const settleTransition = () => {
+      if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+      // The widget updates the page asynchronously after its change event.
+      // Keeping the short transition through that update avoids a text flash.
+      transitionTimerRef.current = setTimeout(() => {
+        setIsTranslating(false);
+        transitionTimerRef.current = null;
+      }, 550);
+    };
+
     const applied = triggerGoogleTranslation(nextLanguage);
     if (!applied) {
       let attempts = 0;
@@ -305,16 +330,13 @@ export default function TranslateProvider({ children }: { children: React.ReactN
         if (triggerGoogleTranslation(nextLanguage) || attempts >= 20) {
           if (retryIntervalRef.current) clearInterval(retryIntervalRef.current);
           retryIntervalRef.current = null;
+          settleTransition();
         }
-      }, 50);
+      }, 75);
+    } else {
+      settleTransition();
     }
-
-    // 4. Smoothly restore full opacity after translation has settled
-    transitionTimerRef.current = setTimeout(() => {
-      setIsTranslating(false);
-      transitionTimerRef.current = null;
-    }, 300);
-  }, [language, triggerGoogleTranslation]);
+  }, [triggerGoogleTranslation]);
 
   return (
     <LanguageContext.Provider value={{ language, changeLanguage, isTranslating }}>
