@@ -9,7 +9,6 @@ import { useSession, signOut } from "next-auth/react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useQuery } from "@tanstack/react-query";
 import { useLanguage } from "@/provider/TranslateProvider";
-import LanguageSwitcher from "@/components/language-switcher";
 
 type NavLink = { label: string; href: string };
 
@@ -184,7 +183,6 @@ export default function Navbar({ lang: overrideLanguage }: NavbarProps) {
 
           {/* Desktop User/Auth */}
           <div className="hidden md:flex items-center gap-3 lg:gap-4">
-            <LanguageSwitcher variant="compact" />
             {user ? (
               <>
                 {/* Notification Bell */}
@@ -285,9 +283,8 @@ export default function Navbar({ lang: overrideLanguage }: NavbarProps) {
             )}
           </div>
 
-          {/* Mobile Menu Button & Language Switcher */}
+          {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center gap-2">
-            <LanguageSwitcher variant="compact" />
             <button
               onClick={() => setIsOpen(!isOpen)}
               aria-label={lang === "en" ? (isOpen ? "Close menu" : "Open menu") : (isOpen ? "Menu sluiten" : "Menu openen")}
@@ -303,9 +300,6 @@ export default function Navbar({ lang: overrideLanguage }: NavbarProps) {
         {/* Mobile Menu */}
         {isOpen && (
           <div id="mobile-menu" className="md:hidden fixed top-20 left-0 w-full h-[calc(100vh-5rem)] overflow-y-auto border-t border-gray-200 bg-white shadow-md z-50">
-            <div className="px-4 pt-3 pb-2 border-b border-gray-100 flex justify-center">
-              <LanguageSwitcher variant="full" />
-            </div>
             <div className="flex flex-col gap-2 px-4 py-4">
               {navLinks.map((link) => {
                 const isActive = checkIsActive(link.href); // ✅ Updated
